@@ -78,18 +78,18 @@ void vbd::init() {
 
 			//r, g, b, a
 			ballVerts.push_back(0.0f);
-			ballVerts.push_back(1.0f);
+			ballVerts.push_back(0.5f);
 			ballVerts.push_back(0.0f);
-			ballVerts.push_back(1.0f);
+			ballVerts.push_back(0.5f);
 
 			ballVerts.push_back(x * zr1);
 			ballVerts.push_back(y * zr1);
 			ballVerts.push_back(z1);
 
 			ballVerts.push_back(0.0f);
-			ballVerts.push_back(1.0f);
+			ballVerts.push_back(0.5f);
 			ballVerts.push_back(0.0f);
-			ballVerts.push_back(1.0f);
+			ballVerts.push_back(0.5f);
 		}
 	}
 	glBufferData(GL_VERTEX_ARRAY, sizeof(ballVerts.data()), ballVerts.data(), GL_STATIC_DRAW);*/

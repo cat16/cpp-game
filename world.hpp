@@ -31,7 +31,7 @@ public:
 	std::vector<cmpt::pos> positions;
 	std::vector<cmpt::orientation> orientations;
 	std::vector<cmpt::vertexBuffer> vertexBuffers;
-	std::vector<cmpt::colorBuffer> colorBuffers;
+	std::vector<cmpt::color> colors;
 	std::vector<cmpt::gravity> gravities;
 
 	bool paused = false;

@@ -33,17 +33,13 @@ public:
 };
 
 class Renderer {
-private:
-	Camera * camera;
-	SDL_Window * window;
-	GUI * gui;
 public:
 	Shader shader;
 
-	Renderer(Shader s);
+	SDL_Window * window;
 
-	void init();
+	Renderer();
 
-	void setWindow(SDL_Window * w);
+	void init(const char * vertex_file_path, const char * fragment_file_path);
 	void render(World world, Camera c);
 };

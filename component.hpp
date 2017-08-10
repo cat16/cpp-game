@@ -28,10 +28,10 @@ namespace cmpt {
 		orientation(int id, glm::quat value);
 	};
 
-	struct colorBuffer : public component {
-		bool operator==(const colorBuffer& other) { return value == other.value; };
-		GLuint value;
-		colorBuffer(int id, GLuint value);
+	struct color : public component {
+		bool operator==(const color& other) { return value == other.value; };
+		glm::vec4 value;
+		color(int id, glm::vec4 value);
 	};
 
 	struct vertexBuffer : public component {

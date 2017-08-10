@@ -33,25 +33,18 @@ bool running = true;
 std::chrono::duration<double> delta;
 const int FPS = 60;
 
-Shader shader;
-Renderer renderer(shader);
+Renderer renderer = Renderer();
 
 int currentId;
 
 World world;
 Camera camera(glm::vec3(0, 0, 0), width, height);
 GUI gui;
-SDL_Window * window;
 
-GLfloat speed = 5;
-GLfloat rollSpeed = 0.3;
+GLfloat speed = 1;
+GLfloat rollSpeed = 1;
 
-InputHandler handler;
-int mousex, mousey, mousexv, mouseyv;
-int scroll;
-std::map<long, bool> keys, keysp;
-std::map<int, bool> mbs, mbsp;
-bool caps;
+InputHandler input;
 
 int sensitivity = 100;
 
@@ -61,7 +54,7 @@ enum Action {
 Action action = INTERACT;
 
 GLfloat perSec(GLfloat f) {
-	return f * delta.count() / 1000;
+	return f * delta.count()*50;
 }
 
 int init() {
@@ -72,7 +65,7 @@ int init() {
 	}
 
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, SDL_TRUE);
-	window = SDL_CreateWindow(
+	SDL_Window * window = SDL_CreateWindow(
 		"Game",
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, // Window position doesn't matter
 		width, height,
@@ -92,8 +85,7 @@ int init() {
 		return 1;
 	}
 
-	shader.init("vertex_shader.glsl", "frag_shader.glsl");
-	renderer.init();
+	renderer.init("vertex_shader.glsl", "frag_shader.glsl");
 
 	vbd::init();
 
@@ -101,15 +93,7 @@ int init() {
 
 	world.generate();
 
-	renderer.setWindow(window);
-
-	handler.setMouse(&mousex, &mousey, &mousexv, &mouseyv);
-	handler.setScroll(&scroll);
-	handler.setKeys(&keys, &keysp);
-	handler.setCaps(&caps);
-	handler.setMouseButtons(&mbs, &mbsp);
-
-	//glOrtho(0, width, height, 0, -1, 1); // This says how far left, right, down, up, forward and backward you can see, e.g. so if you wanted two black bars
+	renderer.window = window;
 
 	world.paused = true;
 	SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -124,25 +108,28 @@ void cleanUp() {
 
 void update() {
 
+	auto keys = input.keys;
+	auto keysp = input.keysp;
+
 	world.update();
 
 	if (!world.paused && !keys[SDLK_LCTRL]) {
-		if (keys[SDLK_w]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), +perSec(speed)); }
-		if (keys[SDLK_s]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), -perSec(speed)); }
+		if (keys[SDLK_w]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), -perSec(speed)); }
+		if (keys[SDLK_s]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), +perSec(speed)); }
 
 		if (keys[SDLK_d]) { camera.pos += util::move3d(glm::vec3(), camera.getRight(), +perSec(speed)); }
 		if (keys[SDLK_a]) { camera.pos += util::move3d(glm::vec3(), camera.getRight(), -perSec(speed)); }
 
-		if (keys[SDLK_SPACE]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), +perSec(speed)); }
-		if (keys[SDLK_LSHIFT]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), -perSec(speed)); }
+		if (keys[SDLK_SPACE]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), -perSec(speed)); }
+		if (keys[SDLK_LSHIFT]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), +perSec(speed)); }
 
 		if (keys[SDLK_q]) { camera.roll(-perSec(rollSpeed)); }
 		if (keys[SDLK_e]) { camera.roll(+perSec(rollSpeed)); }
 
-		camera.yaw(mousexv * sensitivity / 500000.0);
-		camera.pitch(mouseyv * sensitivity / 500000.0);
+		camera.yaw(input.mousexv * sensitivity / 500000.0);
+		camera.pitch(input.mouseyv * sensitivity / 500000.0);
 
-		if (caps) {
+		if (input.caps) {
 			speed = 20;
 		}
 		else {
@@ -219,7 +206,7 @@ void update() {
 		}*/
 		break;
 	case CREATE:
-		if (mbsp[SDL_BUTTON_LEFT]) {
+		if (input.mbsp[SDL_BUTTON_LEFT]) {
 			/*entity::Object * add;
 			switch (creating) {
 			case VOXEL:
@@ -240,7 +227,7 @@ void update() {
 		if (SDL_GetRelativeMouseMode()) {
 			world.paused = true;
 			SDL_SetRelativeMouseMode(SDL_FALSE);
-			SDL_WarpMouseInWindow(window, width / 2, height / 2);
+			SDL_WarpMouseInWindow(renderer.window, width / 2, height / 2);
 		}
 		else {
 			world.paused = false;
@@ -259,7 +246,7 @@ int main(int argc, char *argv[]) {
 		std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
 
-		if (!handler.check())
+		if (!input.check())
 			running = false;
 		update();
 		renderer.render(world, camera);

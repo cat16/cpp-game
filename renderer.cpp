@@ -33,7 +33,7 @@ void Camera::rotate(const glm::quat& rotation) {
 
 glm::vec3 Camera::getForward() { return conjugate(orientation) * glm::vec3(0.0f, 0.0f, -1.0f); }
 glm::vec3 Camera::getUp() { return conjugate(orientation) * glm::vec3(0.0f, 1.0f, 0.0f); }
-glm::vec3 Camera::getRight() { return conjugate(orientation) * glm::vec3(1.0f, 0.0f, 0.0f); }
+glm::vec3 Camera::getRight() { return conjugate(orientation) * glm::vec3(-1.0f, 0.0f, 0.0f); }
 
 glm::quat Camera::getQuat() {
 	return orientation;
@@ -41,13 +41,7 @@ glm::quat Camera::getQuat() {
 
 //Renderer class
 
-Renderer::Renderer(Shader s) : shader(s) {
-
-}
-
-void Renderer::setWindow(SDL_Window * w) {
-	window = w;
-}
+Renderer::Renderer() : shader(Shader()) {}
 
 void Renderer::render(World world, Camera camera) {
 
@@ -56,44 +50,38 @@ void Renderer::render(World world, Camera camera) {
 
 	glUseProgram(shader.getID());
 
-	
 	glm::mat4 view;
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(45.0f), (float)camera.width / (float)camera.height, 0.1f, 100.0f);
-	view = glm::lookAt(glm::vec3(camera.pos.x, camera.pos.y, camera.pos.z), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	
+	view = glm::lookAt(camera.pos, camera.pos + camera.getForward(), camera.getUp());
+
 	shader.setMat4("projection", projection); // might be moved outside the render function
 	shader.setMat4("view", view);
 
 	for (cmpt::vertexBuffer vb : world.vertexBuffers) {
 
+		glm::vec3 pos = cmpt::getCmpt(world.positions, vb.id)[0].value;
+		glm::vec4 color = cmpt::getCmpt(world.colors, vb.id)[0].value;
+
 		glBindVertexArray(vb.value);
 
 		glm::mat4 model;
 
-		glm::vec3 pos = cmpt::getCmpt(world.positions, vb.id)[0].value;
 		model = glm::translate(model, pos);
 		//model *= camera.getQuat()[0][0];
 		shader.setMat4("model", model);
 
+		shader.setVec4("color", color);
+
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 	}
-
-	/*glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glDisable(GL_CULL_FACE);
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-	if (gui)
-		gui->draw(world);*/
 
 	SDL_GL_SwapWindow(window);
 }
 
-void Renderer::init() {
+void Renderer::init(const char * vertex_file_path, const char * fragment_file_path) {
+	shader.init(vertex_file_path, fragment_file_path);
+
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 

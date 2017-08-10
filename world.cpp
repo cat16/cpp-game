@@ -70,7 +70,7 @@ bool World::idExists(int id) {
 		if (c.id == id) return true;
 	}
 
-	for (cmpt::colorBuffer c : colorBuffers) {
+	for (cmpt::color c : colors) {
 		if (c.id == id) return true;
 	}
 
@@ -83,7 +83,7 @@ void World::removeId(int id) {
 	cmpt::removeCmpt(positions, id);
 	cmpt::removeCmpt(orientations, id);
 	cmpt::removeCmpt(vertexBuffers, id);
-	cmpt::removeCmpt(colorBuffers, id);
+	cmpt::removeCmpt(colors, id);
 	cmpt::removeCmpt(rigidBodies, id);
 	cmpt::removeCmpt(gravities, id);
 }
@@ -91,14 +91,14 @@ void World::removeId(int id) {
 void World::createBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec4 color, glm::vec3 dimensions) {
 	positions.push_back({id, pos});
 	orientations.push_back({id, orientation});
-	//colorBuffers.push_back({ id, color });
+	colors.push_back({id, color});
 	vertexBuffers.push_back({ id, vbd::cube});
 }
 
 void World::createSphere(int id, glm::vec3 pos, glm::quat orientation, glm::vec4 color, btScalar r) {
 	positions.push_back({ id, pos });
 	orientations.push_back({ id, orientation });
-	//colorBuffers.push_back({ id, color });
+	colors.push_back({ id, color });
 	vertexBuffers.push_back({ id, vbd::sphere });
 }
 
@@ -130,8 +130,8 @@ void World::update() {
 
 void World::generate() {
 
-	createBox(1, glm::vec3(1, 0, 0), glm::quat(0, 0, 0, 1), glm::vec4(1, 0, 0, 1), glm::vec3(1, 1, 1));
-	createBox(2, glm::vec3(0, 0, 0), glm::quat(0, 0, 0, 1), glm::vec4(1, 0, 0, 1), glm::vec3(1, 1, 1));
+	createBox(1, glm::vec3(0, 0, -5), glm::quat(0, 0, 0, 1), glm::vec4(1, 0, 0, 1), glm::vec3(1, 1, 1));
+	createBox(2, glm::vec3(0, 0, -4), glm::quat(0, 0, 0, 1), glm::vec4(0, 0, 1, 1), glm::vec3(1, 1, 1));
 
 	//addObject(new entity::Planet(btVector3(0, -60, 0), 50, 100, glm::vec4(0.5, 0.5, 0.5, 1)));
 	//addObject(new entity::Planet(btVector3(-40, -20, 0), 5, 5, glm::vec4(0.5, 0.5, 0.5, 1)));
