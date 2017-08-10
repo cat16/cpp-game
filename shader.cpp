@@ -42,8 +42,8 @@ void Shader::init(const char * vertex_file_path, const char * fragment_file_path
 	}
 
 
-	glDetachShader(ProgramID, vertexShader);
-	glDetachShader(ProgramID, fragShader);
+	//glDetachShader(ProgramID, vertexShader);
+	//glDetachShader(ProgramID, fragShader);
 
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragShader);
