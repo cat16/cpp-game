@@ -130,7 +130,7 @@ void World::update() {
 
 void World::generate() {
 
-	createBox(1, glm::vec3(0, 0, 0), glm::quat(0, 0, 0, 1), glm::vec4(1, 0, 0, 1), glm::vec3(1, 1, 1));
+	createBox(1, glm::vec3(1, 0, 0), glm::quat(0, 0, 0, 1), glm::vec4(1, 0, 0, 1), glm::vec3(1, 1, 1));
 	createBox(2, glm::vec3(0, 0, 0), glm::quat(0, 0, 0, 1), glm::vec4(1, 0, 0, 1), glm::vec3(1, 1, 1));
 
 	//addObject(new entity::Planet(btVector3(0, -60, 0), 50, 100, glm::vec4(0.5, 0.5, 0.5, 1)));

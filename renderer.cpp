@@ -56,13 +56,13 @@ void Renderer::render(World world, Camera camera) {
 
 	glUseProgram(shader.getID());
 
-	// create transformations
+	
 	glm::mat4 view;
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(45.0f), (float)camera.width / (float)camera.height, 0.1f, 100.0f);
 	view = glm::lookAt(glm::vec3(camera.pos.x, camera.pos.y, camera.pos.z), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-	// pass transformation matrices to the shader
-	shader.setMat4("projection", projection); // note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+	
+	shader.setMat4("projection", projection); // might be moved outside the render function
 	shader.setMat4("view", view);
 
 	for (cmpt::vertexBuffer vb : world.vertexBuffers) {
@@ -70,7 +70,9 @@ void Renderer::render(World world, Camera camera) {
 		glBindVertexArray(vb.value);
 
 		glm::mat4 model;
-		model = glm::translate(model, cmpt::getCmpt(world.positions, vb.id)[0].value);
+
+		glm::vec3 pos = cmpt::getCmpt(world.positions, vb.id)[0].value;
+		model = glm::translate(model, pos);
 		//model *= camera.getQuat()[0][0];
 		shader.setMat4("model", model);
 
@@ -88,8 +90,7 @@ void Renderer::render(World world, Camera camera) {
 	if (gui)
 		gui->draw(world);*/
 
-	if (window)
-		SDL_GL_SwapWindow(window);
+	SDL_GL_SwapWindow(window);
 }
 
 void Renderer::init() {

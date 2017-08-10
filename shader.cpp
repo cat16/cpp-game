@@ -1,4 +1,5 @@
 #include <glm.hpp>
+#include <gtc/type_ptr.hpp>
 
 #include <fstream>
 #include <vector>
@@ -55,7 +56,8 @@ GLuint Shader::getID() {
 }
 
 void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const {
-	glUniformMatrix4fv(glGetUniformLocation(programID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
+	unsigned int location = glGetUniformLocation(programID, name.c_str());
+	glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(mat));
 }
 
 bool Shader::compileShader(GLuint shader, std::string code) {
