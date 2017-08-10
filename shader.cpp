@@ -14,18 +14,19 @@ void Shader::init(const char * vertex_file_path, const char * fragment_file_path
 	std::string vertexShaderCode = loadFile(vertex_file_path);
 	std::string fragShaderCode = loadFile(fragment_file_path);
 
-	GLint Result = GL_FALSE;
-	int InfoLogLength;
+	int compiled = 0;
 
-	compileShader(vertexShader, vertexShaderCode);
-	compileShader(fragShader, fragShaderCode);
+	if (compileShader(vertexShader, vertexShaderCode)) compiled++;
+	if (compileShader(fragShader, fragShaderCode)) compiled++;
 
 	// Link the program
-	printf("Linking program\n");
 	GLuint ProgramID = glCreateProgram();
 	glAttachShader(ProgramID, vertexShader);
 	glAttachShader(ProgramID, fragShader);
 	glLinkProgram(ProgramID);
+
+	GLint Result = GL_FALSE;
+	int InfoLogLength;
 
 	// Check the program
 	glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
@@ -33,7 +34,10 @@ void Shader::init(const char * vertex_file_path, const char * fragment_file_path
 	if (InfoLogLength > 0) {
 		std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
 		glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
-		printf("%s\n", &ProgramErrorMessage[0]);
+		std::cout << "Could not link shaders: " << &ProgramErrorMessage[0] << std::endl;
+	}
+	else {
+		std::cout << "Successfully compiled and linked " << compiled << "/2 shaders" << std::endl;
 	}
 
 
@@ -44,30 +48,21 @@ void Shader::init(const char * vertex_file_path, const char * fragment_file_path
 	glDeleteShader(fragShader);
 
 	programID = ProgramID;
-
-	// Get a handle for our "MVP" uniform
-	// Only during the initialisation
-	matrixID = glGetUniformLocation(programID, "MVP");
 }
 
 GLuint Shader::getID() {
 	return programID;
 }
 
-GLuint Shader::getMatID() {
-	return matrixID;
-}
-
 void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const {
 	glUniformMatrix4fv(glGetUniformLocation(programID, name.c_str()), 1, GL_FALSE, &mat[0][0]);
 }
 
-void Shader::compileShader(GLuint shader, std::string code) {
+bool Shader::compileShader(GLuint shader, std::string code) {
 	GLint result = GL_FALSE;
 	int infoLogLength;
 
 	//compile
-	std::cout << "Compiling shader " << shader << std::endl;
 	char const * codeptr = code.c_str();
 	glShaderSource(shader, 1, &codeptr, NULL);
 	glCompileShader(shader);
@@ -78,8 +73,10 @@ void Shader::compileShader(GLuint shader, std::string code) {
 	if (infoLogLength > 0) {
 		std::vector<char> errorMessage(infoLogLength + 1);
 		glGetShaderInfoLog(shader, infoLogLength, NULL, &errorMessage[0]);
-		printf("%s\n", &errorMessage[0]);
+		std::cout << "Could not compile shader " << shader << ":" << &errorMessage[0] << std::endl;
+		return false;
 	}
+	return true;
 }
 
 std::string Shader::loadFile(const char * path) {
@@ -92,7 +89,7 @@ std::string Shader::loadFile(const char * path) {
 		fileStream.close();
 	}
 	else {
-		std::cerr << "Could not open file " << path << "!" << std::endl;
+		std::cerr << "Could not open file " << path << std::endl;
 		getchar();
 	}
 
