@@ -1,10 +1,14 @@
-#include "VBD.hpp"
+#include "VAO.hpp"
 
 #include <vector>
 
-void vbd::init() {
+vbd::vao::vao(GLuint id, GLenum mode, GLsizei count) : id(id), mode(mode), count(count) {}
+vbd::vao::vao() {}
 
-	static const GLfloat cubearr[] = {
+std::map<std::string, vbd::vao> vbd::init() {
+	std::map<std::string, vao> data;
+
+	const GLfloat cubearr[] = {
 		-0.5f, -0.5f, -0.5f,
 		0.5f, -0.5f, -0.5f,
 		0.5f,  0.5f, -0.5f,
@@ -48,13 +52,10 @@ void vbd::init() {
 		-0.5f,  0.5f, -0.5f
 	};
 	std::vector<GLfloat> cubebd(cubearr, cubearr + sizeof(cubearr) / sizeof(cubearr[0]));
+	data["cube"] = vao(createVAO(cubebd, 3), GL_TRIANGLES, 36);
 
-	cube = createVBO(cubebd);
 
-	sphere = cube;
-	/*glGenVertexArrays(1, &sphere);
-	glBindVertexArray(sphere);
-	std::vector<GLfloat> ballVerts;
+	std::vector<GLfloat> spherebd;
 	for (int i = 0; i <= 40; i++)
 	{
 		double lat0 = util::PI * (-0.5 + (double)(i - 1) / 40);
@@ -72,48 +73,36 @@ void vbd::init() {
 			double y = sin(lng);
 
 			//x, y, z
-			ballVerts.push_back(x * zr0);
-			ballVerts.push_back(y * zr0);
-			ballVerts.push_back(z0);
+			spherebd.push_back(x * zr0);
+			spherebd.push_back(y * zr0);
+			spherebd.push_back(z0);
 
-			//r, g, b, a
-			ballVerts.push_back(0.0f);
-			ballVerts.push_back(0.5f);
-			ballVerts.push_back(0.0f);
-			ballVerts.push_back(0.5f);
-
-			ballVerts.push_back(x * zr1);
-			ballVerts.push_back(y * zr1);
-			ballVerts.push_back(z1);
-
-			ballVerts.push_back(0.0f);
-			ballVerts.push_back(0.5f);
-			ballVerts.push_back(0.0f);
-			ballVerts.push_back(0.5f);
+			spherebd.push_back(x * zr1);
+			spherebd.push_back(y * zr1);
+			spherebd.push_back(z1);
 		}
 	}
-	glBufferData(GL_VERTEX_ARRAY, sizeof(ballVerts.data()), ballVerts.data(), GL_STATIC_DRAW);*/
+	data["sphere"] = vao(createVAO(spherebd, 3), GL_TRIANGLE_STRIP, 3200*2);
+
+	return data;
 }
 
-GLuint vbd::createVBO(const std::vector<GLfloat>& data) {
-	int dimensions = 3;
+GLuint vbd::createVAO(const std::vector<GLfloat>& data, int dimensions) {
+	GLuint vbo, vao;
 
-	GLuint vbo;
+	glGenVertexArrays(1, &vao);
 	glGenBuffers(1, &vbo);
+
+	glBindVertexArray(vao);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER,
-		data.size() * sizeof(GLfloat),
-		data.data(),
-		GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(count,
-		dimensions,
-		GL_FLOAT,
-		GL_FALSE,
-		0,
-		(GLvoid*)0);
+	glVertexAttribPointer(0, dimensions, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
 
-	glEnableVertexAttribArray(count++);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
-	return vbo;
+	return vao;
 }

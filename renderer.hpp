@@ -14,6 +14,7 @@ public:
 	glm::vec3 pos;
 	int width;
 	int height;
+	GLfloat zoom;
 
 	Camera(glm::vec3 pos, int width, int height);
 

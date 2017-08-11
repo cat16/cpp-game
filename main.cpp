@@ -19,7 +19,7 @@
 #include "util.hpp"
 #include "input.hpp"
 #include "component.hpp"
-#include "VBD.hpp"
+#include "VAO.hpp"
 #include "shader.hpp"
 
 void debug(const char* a) {
@@ -45,6 +45,7 @@ GLfloat speed = 1;
 GLfloat rollSpeed = 1;
 
 InputHandler input;
+std::map<long, bool> activated;
 
 int sensitivity = 100;
 
@@ -87,7 +88,7 @@ int init() {
 
 	renderer.init("vertex_shader.glsl", "frag_shader.glsl");
 
-	vbd::init();
+	world.vbs = vbd::init();
 
 
 
@@ -113,6 +114,16 @@ void update() {
 
 	world.update();
 
+	if (keysp[SDLK_F1]) {
+		activated[SDLK_F1] = !activated[SDLK_F1];
+		if (activated[SDLK_F1]) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+	}
+
 	if (!world.paused && !keys[SDLK_LCTRL]) {
 		if (keys[SDLK_w]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), -perSec(speed)); }
 		if (keys[SDLK_s]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), +perSec(speed)); }
@@ -135,6 +146,8 @@ void update() {
 		else {
 			speed = 5;
 		}
+
+		camera.zoom = input.mouseScroll;
 	}
 
 	glm::vec3 lookTo = (camera.getForward() * 15.F);
@@ -163,7 +176,6 @@ void update() {
 			setProjected(lookTo);*/
 		}
 	}
-
 	else {
 		if (keysp[SDLK_1]) {
 			action = INTERACT;
@@ -179,9 +191,7 @@ void update() {
 	}
 
 	if (action == CREATE) {
-		if (cmpt::getCmpt(world.vertexBuffers, -1).size() == 0) {
-			
-		}
+		
 	}
 	else {
 		world.removeId(-1);

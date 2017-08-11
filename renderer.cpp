@@ -45,7 +45,7 @@ Renderer::Renderer() : shader(Shader()) {}
 
 void Renderer::render(World world, Camera camera) {
 
-	glClearColor(0.f, 1.f, 1.f, 1.0f);
+	glClearColor(0.f, 0.f, 0.f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(shader.getID());
@@ -58,22 +58,23 @@ void Renderer::render(World world, Camera camera) {
 	shader.setMat4("projection", projection); // might be moved outside the render function
 	shader.setMat4("view", view);
 
-	for (cmpt::vertexBuffer vb : world.vertexBuffers) {
+	for (cmpt::vao vb : world.vertexBuffers) {
 
-		glm::vec3 pos = cmpt::getCmpt(world.positions, vb.id)[0].value;
-		glm::vec4 color = cmpt::getCmpt(world.colors, vb.id)[0].value;
-
-		glBindVertexArray(vb.value);
+		glm::vec3 pos = cmpt::getCmpt(world.positions, vb.id)->value;
+		glm::quat orientation = cmpt::getCmpt(world.orientations, vb.id)->value;
+		glm::vec3 scale = cmpt::getCmpt(world.scales, vb.id)->value;
+		glm::vec4 color = cmpt::getCmpt(world.colors, vb.id)->value;
 
 		glm::mat4 model;
-
 		model = glm::translate(model, pos);
-		//model *= camera.getQuat()[0][0];
-		shader.setMat4("model", model);
+		model *= glm::toMat4(orientation);
+		model = glm::scale(model, scale);
 
+		shader.setMat4("model", model);
 		shader.setVec4("color", color);
 
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(vb.value.id);
+		glDrawArrays(vb.value.mode, 0, vb.value.count);
 	}
 
 	SDL_GL_SwapWindow(window);
@@ -84,6 +85,5 @@ void Renderer::init(const char * vertex_file_path, const char * fragment_file_pa
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-
 	glEnable(GL_LINE_SMOOTH);
 }

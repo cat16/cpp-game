@@ -9,6 +9,8 @@
 #include <vector>
 #include <algorithm>
 
+#include "VAO.hpp"
+
 namespace cmpt {
 
 	struct component {
@@ -28,16 +30,22 @@ namespace cmpt {
 		orientation(int id, glm::quat value);
 	};
 
+	struct scale : public component {
+		bool operator==(const scale& other) { return value == other.value; };
+		glm::vec3 value;
+		scale(int id, glm::vec3 value);
+	};
+
 	struct color : public component {
 		bool operator==(const color& other) { return value == other.value; };
 		glm::vec4 value;
 		color(int id, glm::vec4 value);
 	};
 
-	struct vertexBuffer : public component {
-		bool operator==(const vertexBuffer& other) { return value == other.value; };
-		GLuint value;
-		vertexBuffer(int id, GLuint value);
+	struct vao : public component {
+		bool operator==(const vao& other) { return value.id == other.value.id; };
+		vbd::vao value;
+		vao(int id, vbd::vao value);
 	};
 
 	struct rigidBody : public component {
@@ -55,12 +63,15 @@ namespace cmpt {
 	};
 
 	template<typename T>
-	std::vector<T> getCmpt(std::vector<T> &arr, int id) {
+	T* getCmpt(std::vector<T> &arr, int id) {
 		static_assert(std::is_base_of<component, T>::value, "T must derive from component");
 
-		std::vector<T> matching;
-		std::copy_if(arr.begin(), arr.end(), std::back_inserter(matching), [id](const component &c) {return c.id == id; });
-		return matching;
+		for (int i = 0; i < arr.size(); i++) {
+			if (arr[i].id == id)
+				return &arr[i];
+		}
+
+		return NULL;
 	}
 
 	template<typename T>

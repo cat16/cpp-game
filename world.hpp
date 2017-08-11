@@ -14,6 +14,7 @@
 #include "btBulletDynamicsCommon.h"
 
 #include <vector>
+#include <map>
 
 #include "component.hpp"
 
@@ -27,10 +28,12 @@ private:
 
 	std::vector<cmpt::rigidBody> rigidBodies;
 public:
+	std::map<std::string, vbd::vao> vbs;
 
 	std::vector<cmpt::pos> positions;
 	std::vector<cmpt::orientation> orientations;
-	std::vector<cmpt::vertexBuffer> vertexBuffers;
+	std::vector<cmpt::scale> scales;
+	std::vector<cmpt::vao> vertexBuffers;
 	std::vector<cmpt::color> colors;
 	std::vector<cmpt::gravity> gravities;
 
@@ -40,13 +43,15 @@ public:
 
 	void addRigidBody(cmpt::rigidBody b);
 	void removeRigidBody(cmpt::rigidBody b);
-	void removeRigidBody(int id);
 
 	bool idExists(int id);
 	void removeId(int id);
 
-	void createBox   (int id, glm::vec3 pos, glm::quat orientation, glm::vec4 color, glm::vec3 dimensions);
-	void createSphere(int id, glm::vec3 pos, glm::quat orientation, glm::vec4 color, btScalar r);
+	void createBox     (int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color);
+	void createRigidBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color);
+
+	void createSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color);
+	void createPlanet(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, btScalar gravity);
 
 	void update();
 	void generate();

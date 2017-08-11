@@ -1,4 +1,6 @@
-#include "entity.hpp"
+//unused - still kept for method code
+
+/*#include "entity.hpp"
 
 #include <glew.h>
 
@@ -138,4 +140,4 @@ void entity::Star::draw() {
 	GLfloat position[] = { 0, 0, 0, 1.0f };
 	glLightfv(GL_LIGHT0, GL_POSITION, position);
 	Sphere::draw();
-}
+}*/
