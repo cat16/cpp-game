@@ -68,7 +68,7 @@ public:
 
 
 
-	void update();
+	void update(double delta);
 	void generate();
 	void cleanUp();
 

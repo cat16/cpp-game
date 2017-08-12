@@ -12,11 +12,10 @@ private:
 	glm::quat orientation;
 public:
 	glm::vec3 pos;
-	int width;
-	int height;
+	GLfloat width, height, near, far;	
 	GLfloat zoom;
 
-	Camera(glm::vec3 pos, int width, int height);
+	Camera(glm::vec3 pos, GLfloat width, GLfloat height);
 
 	void pitch(float pitch);
 	void yaw(float yaw);

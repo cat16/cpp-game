@@ -79,7 +79,7 @@ void World::createRigidSphere(int id, glm::vec3 pos, glm::quat orientation, btSc
 	addRigidBody({ id, pos, orientation, new btSphereShape(radius), mass });
 }
 
-void World::update() {
+void World::update(double delta) {
 	if (!paused) {
 		for (cmpt::gravity g : gravities) {
 			glm::vec3 gPos;
@@ -108,7 +108,7 @@ void World::update() {
 				}
 			}
 		}
-		dynamicsWorld->stepSimulation(1 / 60.f, 10);
+		dynamicsWorld->stepSimulation(1 / 60.f, 10*delta);
 		for (cmpt::rigidBody r : rigidBodies) {
 			if (cmpt::getCmpt(positions, r.id)) {
 				cmpt::pos * p = cmpt::getCmpt(positions, r.id);
@@ -125,11 +125,8 @@ void World::update() {
 
 void World::generate() {
 
-	createRigidBox(1, glm::vec3(0, 0, -5), glm::quat(util::TAU / 16, 0, 1, 0), glm::vec3(1, 1, 1), glm::vec4(1, 0, 0, 1), 1);
-	createBox(2, glm::vec3(0, 0, -4), glm::quat(0, 0, 0, 1), glm::vec3(2, 2, 1), glm::vec4(0, 0, 1, 1));
-
-	gravities.push_back({3, 10});
-	createRigidSphere(3, glm::vec3(0, 0, 5), glm::quat(0, 0, 0, 1), btScalar(2), glm::vec4(0, 1, 0, 1), 0);
+	gravities.push_back({3, 100});
+	createRigidSphere(3, glm::vec3(0, -51, 0), glm::quat(0, 0, 0, 1), btScalar(50), glm::vec4(0.5, 0.5, 0.5, 1), 0);
 
 	//addObject(new entity::Planet(btVector3(0, -60, 0), 50, 100, glm::vec4(0.5, 0.5, 0.5, 1)));
 	//addObject(new entity::Planet(btVector3(-40, -20, 0), 5, 5, glm::vec4(0.5, 0.5, 0.5, 1)));
@@ -161,9 +158,9 @@ cmpt::rigidBody* World::raycast(glm::vec3 s, glm::vec3 e) {
 
 	if (result.hasHit()) {
 		if (const btRigidBody* rb = dynamic_cast<const btRigidBody *>(result.m_collisionObject)) {
-			for (cmpt::rigidBody r : rigidBodies) {
-				if (rb == r.value) {
-					return &r;
+			for (unsigned int i = 0; i < rigidBodies.size(); i++) {
+				if (rb == rigidBodies[i].value) {
+					return &rigidBodies[i];
 					break;
 				}
 			}

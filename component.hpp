@@ -82,7 +82,7 @@ namespace cmpt {
 	T* getCmpt(std::vector<T> &arr, int id) {
 		static_assert(std::is_base_of<component, T>::value, "T must derive from component");
 
-		for (int i = 0; i < arr.size(); i++) {
+		for (unsigned int i = 0; i < arr.size(); i++) {
 			if (arr[i].id == id)
 				return &arr[i];
 		}
@@ -94,7 +94,7 @@ namespace cmpt {
 	T* getCmptSafe(std::vector<T> &arr, T* def) {
 		static_assert(std::is_base_of<component, T>::value, "T must derive from component");
 
-		for (int i = 0; i < arr.size(); i++) {
+		for (unsigned int i = 0; i < arr.size(); i++) {
 			if (arr[i].id == def->id)
 				return &arr[i];
 		}

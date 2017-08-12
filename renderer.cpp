@@ -12,7 +12,7 @@
 
 //Camera class
 
-Camera::Camera(glm::vec3 pos, int width, int height) : pos(pos), width(width), height(height) {}
+Camera::Camera(glm::vec3 pos, GLfloat width, GLfloat height) : pos(pos), width(width), height(height), near(0.1), far(500) {}
 
 void Camera::pitch(float pitch) { rotate(util::toRadiansf(pitch), glm::vec3(1.0f, 0.0f, 0.0f)); }
 void Camera::yaw(float yaw) { rotate(util::toRadiansf(yaw), glm::vec3(0.0f, 1.0f, 0.0f)); }
@@ -48,15 +48,19 @@ void Renderer::render(World world, Camera camera) {
 	glClearColor(0.f, 0.f, 0.f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glUseProgram(shader.getID());
+	shader.use();
 
 	glm::mat4 view;
 	glm::mat4 projection;
-	projection = glm::perspective(glm::radians(45.0f), (float)camera.width / (float)camera.height, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(45.0f), camera.width / camera.height, camera.near, camera.far);
 	view = glm::lookAt(camera.pos, camera.pos + camera.getForward(), camera.getUp());
 
 	shader.setMat4("projection", projection); // might be moved outside the render function
 	shader.setMat4("view", view);
+
+	shader.setVec3("lightColor", glm::vec3(1, 1, 1));
+	shader.setVec3("lightPos", glm::vec3(0, 0, 0));
+	shader.setFloat("lightAmbient", 0.1);
 
 	for (cmpt::vao vb : world.vertexBuffers) {
 

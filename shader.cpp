@@ -51,10 +51,6 @@ void Shader::init(const char * vertex_file_path, const char * fragment_file_path
 	glDeleteShader(fragShader);
 }
 
-GLuint Shader::getID() {
-	return programID;
-}
-
 bool Shader::compileShader(GLuint shader, std::string code) {
 	GLint result = GL_FALSE;
 	int infoLogLength;
@@ -93,12 +89,26 @@ std::string Shader::loadFile(const char * path) {
 	return text;
 }
 
+GLuint Shader::location(const std::string &name) const {
+	return glGetUniformLocation(programID, name.c_str());
+}
+
+void Shader::use() {
+	glUseProgram(programID);
+}
+
 void Shader::setMat4(const std::string &name, const glm::mat4 &mat) const {
-	unsigned int location = glGetUniformLocation(programID, name.c_str());
-	glUniformMatrix4fv(location, 1, GL_FALSE, &mat[0][0]);
+	glUniformMatrix4fv(location(name), 1, GL_FALSE, &mat[0][0]);
 }
 
 void Shader::setVec4(const std::string &name, const glm::vec4 &vec) const {
-	unsigned int location = glGetUniformLocation(programID, name.c_str());
-	glUniform4f(location, vec.x, vec.y, vec.z, vec.w);
+	glUniform4f(location(name), vec.x, vec.y, vec.z, vec.w);
+}
+
+void Shader::setVec3(const std::string &name, const glm::vec3 &vec) const {
+	glUniform3f(location(name), vec.x, vec.y, vec.z);
+}
+
+void Shader::setFloat(const std::string &name, const float f) const {
+	glUniform1f(location(name), f);
 }

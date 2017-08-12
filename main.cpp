@@ -52,11 +52,12 @@ int sensitivity = 100;
 enum Action {
 	INTERACT, CREATE, REMOVE
 };
-Action action = CREATE;
+Action action = INTERACT;
+cmpt::rigidBody * holding = NULL;
 int entityCount = 4;
 
 GLfloat perSec(GLfloat f) {
-	return f * delta.count() * 50;
+	return f * delta.count();
 }
 
 int init() {
@@ -102,7 +103,8 @@ int init() {
 
 
 
-	world.colors.push_back({-1, glm::vec4(1, 0, 0, 0.5)});
+	input.mouseScroll = 5;
+	world.colors.push_back({ -1, glm::vec4(1, 0, 0, 0.5) });
 	world.vertexBuffers.push_back({ -1, world.vbs["cube"] });
 
 	return 0;
@@ -118,7 +120,7 @@ void update() {
 	auto keys = input.keys;
 	auto keysp = input.keysp;
 
-	world.update();
+	world.update(delta.count());
 
 	if (keysp[SDLK_F1]) {
 		activated[SDLK_F1] = !activated[SDLK_F1];
@@ -130,34 +132,40 @@ void update() {
 		}
 	}
 
-	if (!world.paused && !keys[SDLK_LCTRL]) {
-		if (keys[SDLK_w]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), -perSec(speed)); }
-		if (keys[SDLK_s]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), +perSec(speed)); }
+	if (!world.paused) {
 
-		if (keys[SDLK_d]) { camera.pos += util::move3d(glm::vec3(), camera.getRight(), +perSec(speed)); }
-		if (keys[SDLK_a]) { camera.pos += util::move3d(glm::vec3(), camera.getRight(), -perSec(speed)); }
+		if (!keys[SDLK_LCTRL]) {
 
-		if (keys[SDLK_SPACE]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), -perSec(speed)); }
-		if (keys[SDLK_LSHIFT]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), +perSec(speed)); }
+			if (keys[SDLK_w]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), -perSec(speed)); }
+			if (keys[SDLK_s]) { camera.pos += util::move3d(glm::vec3(), camera.getForward(), +perSec(speed)); }
 
-		if (keys[SDLK_q]) { camera.roll(-perSec(rollSpeed)); }
-		if (keys[SDLK_e]) { camera.roll(+perSec(rollSpeed)); }
+			if (keys[SDLK_d]) { camera.pos += util::move3d(glm::vec3(), camera.getRight(), +perSec(speed)); }
+			if (keys[SDLK_a]) { camera.pos += util::move3d(glm::vec3(), camera.getRight(), -perSec(speed)); }
 
-		camera.yaw(input.mousexv * sensitivity / 500000.0);
-		camera.pitch(input.mouseyv * sensitivity / 500000.0);
+			if (keys[SDLK_SPACE]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), -perSec(speed)); }
+			if (keys[SDLK_LSHIFT]) { camera.pos += util::move3d(glm::vec3(), camera.getUp(), +perSec(speed)); }
 
-		if (input.caps) {
-			speed = 20;
+			if (keys[SDLK_q]) { camera.roll(-perSec(rollSpeed)); }
+			if (keys[SDLK_e]) { camera.roll(+perSec(rollSpeed)); }
+
+			camera.yaw(input.mousexv * sensitivity / 500000.0);
+			camera.pitch(input.mouseyv * sensitivity / 500000.0);
+
+			if (input.caps) {
+				speed = 20;
+			}
+			else {
+				speed = 5;
+			}
+
 		}
-		else {
-			speed = 5;
-		}
-
-		camera.zoom = input.mouseScroll;
 
 
 
-		glm::vec3 lookTo = (camera.getForward() * 5.F);
+		if(input.mouseScroll < 1) input.mouseScroll = 1;
+		GLfloat reach = input.mouseScroll;
+
+		glm::vec3 lookTo = (camera.getForward() * reach);
 
 		if (keys[SDLK_LCTRL]) {
 			if (keys[SDLK_LSHIFT]) {
@@ -184,9 +192,12 @@ void update() {
 				if (keysp[SDLK_1]) {
 					cmpt::removeCmpt(world.vertexBuffers, -1);
 					world.vertexBuffers.push_back({ -1, world.vbs["cube"] });
+					cmpt::updateCmpt(world.scales, cmpt::scale(-1, glm::vec3(1, 1, 1)));
 				}
 				else if (keysp[SDLK_2]) {
 					cmpt::removeCmpt(world.vertexBuffers, -1);
+					world.vertexBuffers.push_back({ -1, world.vbs["sphere"] });
+					cmpt::updateCmpt(world.scales, cmpt::scale(-1, glm::vec3(0.5, 0.5, 0.5)));
 				}
 			}
 		}
@@ -208,13 +219,27 @@ void update() {
 			if (input.mbsp[SDL_BUTTON_LEFT]) {
 				glm::vec4 color = cmpt::getCmptSafe(world.colors, new cmpt::color(-1, world.defaults.color))->value;
 				color.w = 1;
-				world.createRigidBox(entityCount++,
-					cmpt::getCmpt(world.positions, -1)->value,
-					cmpt::getCmpt(world.orientations, -1)->value,
-					cmpt::getCmptSafe(world.scales, new cmpt::scale(-1, world.defaults.scale))->value,
-					color,
-					1
-				);
+				vbd::vao vao = cmpt::getCmpt(world.vertexBuffers, -1)->value;
+
+				if (vao.id == world.vbs["cube"].id) {
+					world.createRigidBox(entityCount++,
+						cmpt::getCmpt(world.positions, -1)->value,
+						cmpt::getCmpt(world.orientations, -1)->value,
+						cmpt::getCmptSafe(world.scales, new cmpt::scale(-1, world.defaults.scale))->value,
+						color,
+						1
+					);
+				}
+
+				if (vao.id == world.vbs["sphere"].id) {
+					world.createRigidSphere(entityCount++,
+						cmpt::getCmpt(world.positions, -1)->value,
+						cmpt::getCmpt(world.orientations, -1)->value,
+						cmpt::getCmptSafe(world.scales, new cmpt::scale(-1, world.defaults.scale))->value.x,
+						color,
+						1
+					);
+				}
 			}
 		}
 		else {
@@ -223,9 +248,18 @@ void update() {
 
 		if (action == INTERACT) {
 			cmpt::rigidBody * lookingAt = world.raycast(camera.pos, lookTo + camera.pos);
-			if (lookingAt != NULL && input.mbs[SDL_BUTTON_LEFT]) {
-				lookingAt->setPos(lookTo + camera.pos);
+			if (lookingAt && input.mbsp[SDL_BUTTON_LEFT]) {
+				holding = lookingAt;
 			}
+			if (!input.mbs[SDL_BUTTON_LEFT]) {
+				holding = NULL;
+			}
+			if (holding) {
+				holding->setPos(lookTo + camera.pos);
+			}
+		}
+		else {
+			holding = NULL;
 		}
 	}
 
@@ -248,8 +282,10 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
+	std::chrono::high_resolution_clock::time_point start, finish;
+
 	while (running) {
-		std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+		start = std::chrono::high_resolution_clock::now();
 
 
 		if (!input.check())
@@ -257,11 +293,11 @@ int main(int argc, char *argv[]) {
 		update();
 		renderer.render(world, camera);
 
-		std::chrono::high_resolution_clock::time_point finish = std::chrono::high_resolution_clock::now();
+		finish = std::chrono::high_resolution_clock::now();
 		delta = std::chrono::duration_cast<std::chrono::duration<double>>(finish - start);
 		if (1000 / FPS > (delta.count()))
 			SDL_Delay(1000 / FPS - (delta.count()));
-
+		finish = std::chrono::high_resolution_clock::now();
 		delta = std::chrono::duration_cast<std::chrono::duration<double>>(finish - start);
 	}
 

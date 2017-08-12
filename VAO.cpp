@@ -9,47 +9,47 @@ std::map<std::string, vbd::vao> vbd::init() {
 	std::map<std::string, vao> data;
 
 	const GLfloat cubearr[] = {
-		-0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
+		0.5f, -0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
+		0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
+		0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
+		-0.5f,  0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f,  0.0f, -1.0f,
 
-		-0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
+		0.5f, -0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
+		0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
+		0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
+		-0.5f,  0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f, 0.0f,  0.0f,  1.0f,
 
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
+		0.5f,  0.5f,  0.5f, 1.0f,  0.0f,  0.0f,
+		0.5f,  0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
+		0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
+		0.5f, -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
+		0.5f, -0.5f,  0.5f, 1.0f,  0.0f,  0.0f,
+		0.5f,  0.5f,  0.5f, 1.0f,  0.0f,  0.0f,
 
-		-0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f, -0.5f,
-		0.5f, -0.5f,  0.5f,
-		0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f,
+		0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f,
+		0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,
+		0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f, 0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, 0.0f, -1.0f,  0.0f,
 
-		-0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f, -0.5f,
-		0.5f,  0.5f,  0.5f,
-		0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f
+		-0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f,
+		0.5f,  0.5f, -0.5f, 0.0f,  1.0f,  0.0f,
+		0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,
+		0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, 0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 	};
 	std::vector<GLfloat> cubebd(cubearr, cubearr + sizeof(cubearr) / sizeof(cubearr[0]));
 	data["cube"] = vao(createVAO(cubebd, 3), GL_TRIANGLES, 36);
@@ -72,11 +72,19 @@ std::map<std::string, vbd::vao> vbd::init() {
 			double x = cos(lng);
 			double y = sin(lng);
 
-			//x, y, z
+			//pos
 			spherebd.push_back(x * zr0);
 			spherebd.push_back(y * zr0);
 			spherebd.push_back(z0);
-
+			//normal
+			spherebd.push_back(x * zr0);
+			spherebd.push_back(y * zr0);
+			spherebd.push_back(z0);
+			//pos
+			spherebd.push_back(x * zr1);
+			spherebd.push_back(y * zr1);
+			spherebd.push_back(z1);
+			//normal
 			spherebd.push_back(x * zr1);
 			spherebd.push_back(y * zr1);
 			spherebd.push_back(z1);
@@ -98,8 +106,12 @@ GLuint vbd::createVAO(const std::vector<GLfloat>& data, int dimensions) {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(GLfloat), data.data(), GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, dimensions, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid*)0);
+	//position
+	glVertexAttribPointer(0, dimensions, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
+	//normal
+	glVertexAttribPointer(1, dimensions, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
