@@ -60,10 +60,29 @@ void Renderer::render(World world, Camera camera) {
 
 	for (cmpt::vao vb : world.vertexBuffers) {
 
+		if (!cmpt::getCmpt(world.positions, vb.id))
+			continue;
+
 		glm::vec3 pos = cmpt::getCmpt(world.positions, vb.id)->value;
-		glm::quat orientation = cmpt::getCmpt(world.orientations, vb.id)->value;
-		glm::vec3 scale = cmpt::getCmpt(world.scales, vb.id)->value;
-		glm::vec4 color = cmpt::getCmpt(world.colors, vb.id)->value;
+		//these things are needed to draw, but shouldn't be 100% neccessary.
+		glm::quat orientation = cmpt::getCmptSafe(world.orientations, new cmpt::orientation( vb.id, world.defaults.orientation ))->value;
+		glm::vec3 scale = cmpt::getCmptSafe(world.scales, new cmpt::scale(vb.id, world.defaults.scale))->value;
+		glm::vec4 color = cmpt::getCmptSafe(world.colors, new cmpt::color(vb.id, world.defaults.color))->value;
+
+		if (!cmpt::getCmpt(world.orientations, vb.id))
+			orientation = glm::quat(0, 0, 0, 1);
+		else
+			orientation = cmpt::getCmpt(world.orientations, vb.id)->value;
+
+		if (!cmpt::getCmpt(world.colors, vb.id))
+			color = glm::vec4(0.5, 0.5, 0.5, 1);
+		else
+			color = cmpt::getCmpt(world.colors, vb.id)->value;
+
+		if (!cmpt::getCmpt(world.scales, vb.id))
+			scale = glm::vec3(1, 1, 1);
+		else
+			scale = cmpt::getCmpt(world.scales, vb.id)->value;
 
 		glm::mat4 model;
 		model = glm::translate(model, pos);
@@ -86,4 +105,6 @@ void Renderer::init(const char * vertex_file_path, const char * fragment_file_pa
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glEnable(GL_LINE_SMOOTH);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }

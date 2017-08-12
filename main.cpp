@@ -42,7 +42,7 @@ Camera camera(glm::vec3(0, 0, 0), width, height);
 GUI gui;
 
 GLfloat speed = 1;
-GLfloat rollSpeed = 1;
+GLfloat rollSpeed = 0.5;
 
 InputHandler input;
 std::map<long, bool> activated;
@@ -52,10 +52,11 @@ int sensitivity = 100;
 enum Action {
 	INTERACT, CREATE, REMOVE
 };
-Action action = INTERACT;
+Action action = CREATE;
+int entityCount = 4;
 
 GLfloat perSec(GLfloat f) {
-	return f * delta.count()*50;
+	return f * delta.count() * 50;
 }
 
 int init() {
@@ -98,6 +99,11 @@ int init() {
 
 	world.paused = true;
 	SDL_SetRelativeMouseMode(SDL_FALSE);
+
+
+
+	world.colors.push_back({-1, glm::vec4(1, 0, 0, 0.5)});
+	world.vertexBuffers.push_back({ -1, world.vbs["cube"] });
 
 	return 0;
 }
@@ -148,89 +154,79 @@ void update() {
 		}
 
 		camera.zoom = input.mouseScroll;
-	}
 
-	glm::vec3 lookTo = (camera.getForward() * 15.F);
-	cmpt::rigidBody lookingAt = world.raycast(-camera.pos, lookTo - camera.pos);
 
-	if (keys[SDLK_LCTRL]) {
-		if (keys[SDLK_LSHIFT]) {
 
-			/*if (keysp[SDLK_1]) { color = glm::vec4(1, 0, 0, 1); }
-			else if (keysp[SDLK_2]) { color = glm::vec4(1, 0.5, 0, 1); }
-			else if (keysp[SDLK_3]) { color = glm::vec4(1, 1, 0, 1); }
-			else if (keysp[SDLK_4]) { color = glm::vec4(0, 1, 0, 1); }
-			else if (keysp[SDLK_5]) { color = glm::vec4(0, 1, 0.5, 1); }
-			else if (keysp[SDLK_6]) { color = glm::vec4(0, 1, 1, 1); }
-			else if (keysp[SDLK_7]) { color = glm::vec4(0, 0, 1, 1); }
-			else if (keysp[SDLK_8]) { color = glm::vec4(0.5, 0, 1, 1); }
-			else if (keysp[SDLK_9]) { color = glm::vec4(1, 0, 1, 1); }*/
-		}
-		else {
-			/*if (keysp[SDLK_1]) {
-				creating = VOXEL;
-			}
-			if (keysp[SDLK_2]) {
-				creating = PLANET;
-			}
-			setProjected(lookTo);*/
-		}
-	}
-	else {
-		if (keysp[SDLK_1]) {
-			action = INTERACT;
-		}
+		glm::vec3 lookTo = (camera.getForward() * 5.F);
 
-		if (keys[SDLK_2]) {
-			action = CREATE;
-		}
-
-		if (keysp[SDLK_3]) {
-			action = REMOVE;
-		}
-	}
-
-	if (action == CREATE) {
-		
-	}
-	else {
-		world.removeId(-1);
-	}
-
-	switch (action) {
-	case INTERACT:
-		/*if (mbs[SDL_BUTTON_LEFT]) {
-			if (holding) {
-				holding->setPos(lookTo*0.9f - camera.pos);
+		if (keys[SDLK_LCTRL]) {
+			if (keys[SDLK_LSHIFT]) {
+				if (keysp[SDLK_1])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 0, 0, 0.5) });
+				if (keysp[SDLK_2])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 0.5, 0, 0.5) });
+				if (keysp[SDLK_3])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 1, 0, 0.5) });
+				if (keysp[SDLK_4])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 1, 0, 0.5) });
+				if (keysp[SDLK_5])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 1, 0.5, 0.5) });
+				if (keysp[SDLK_6])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 1, 1, 0.5) });
+				if (keysp[SDLK_7])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 0, 1, 0.5) });
+				if (keysp[SDLK_8])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0.5, 0, 1, 0.5) });
+				if (keysp[SDLK_9])
+					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 0, 1, 0.5) });
 			}
 			else {
-				if (lookingAt) {
-					/*if (entity::Voxel* v = dynamic_cast<entity::Voxel*>(lookingAt)) {
-						holding = lookingAt;
-					}
+				if (keysp[SDLK_1]) {
+					cmpt::removeCmpt(world.vertexBuffers, -1);
+					world.vertexBuffers.push_back({ -1, world.vbs["cube"] });
+				}
+				else if (keysp[SDLK_2]) {
+					cmpt::removeCmpt(world.vertexBuffers, -1);
 				}
 			}
 		}
 		else {
-			holding = NULL;
-		}*/
-		break;
-	case CREATE:
-		if (input.mbsp[SDL_BUTTON_LEFT]) {
-			/*entity::Object * add;
-			switch (creating) {
-			case VOXEL:
-				add = new entity::Voxel(util::btv3(lookTo-camera.pos), btQuaternion(0, 0, 0, 1), color);
-				world.addObject(add);
-				break;
-			case PLANET:
-				add = new entity::Planet(util::btv3(lookTo - camera.pos), size, size, color);
-				world.addObject(add);
-				break;
-			}*/
+			if (keysp[SDLK_1]) {
+				action = INTERACT;
+			}
+			else if (keysp[SDLK_2]) {
+				action = CREATE;
+			}
+			else if (keysp[SDLK_3]) {
+				action = REMOVE;
+			}
 		}
-	case REMOVE:
-		break;
+
+		if (action == CREATE) {
+			cmpt::updateCmpt(world.positions, cmpt::pos({ -1, lookTo + camera.pos }));
+			cmpt::updateCmpt(world.orientations, cmpt::orientation({ -1, glm::inverse(camera.getQuat()) }));
+			if (input.mbsp[SDL_BUTTON_LEFT]) {
+				glm::vec4 color = cmpt::getCmptSafe(world.colors, new cmpt::color(-1, world.defaults.color))->value;
+				color.w = 1;
+				world.createRigidBox(entityCount++,
+					cmpt::getCmpt(world.positions, -1)->value,
+					cmpt::getCmpt(world.orientations, -1)->value,
+					cmpt::getCmptSafe(world.scales, new cmpt::scale(-1, world.defaults.scale))->value,
+					color,
+					1
+				);
+			}
+		}
+		else {
+			cmpt::removeCmpt(world.positions, -1);
+		}
+
+		if (action == INTERACT) {
+			cmpt::rigidBody * lookingAt = world.raycast(camera.pos, lookTo + camera.pos);
+			if (lookingAt != NULL && input.mbs[SDL_BUTTON_LEFT]) {
+				lookingAt->setPos(lookTo + camera.pos);
+			}
+		}
 	}
 
 	if (keysp[SDLK_ESCAPE]) {

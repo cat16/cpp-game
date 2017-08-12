@@ -30,6 +30,8 @@ private:
 public:
 	std::map<std::string, vbd::vao> vbs;
 
+	//components
+
 	std::vector<cmpt::pos> positions;
 	std::vector<cmpt::orientation> orientations;
 	std::vector<cmpt::scale> scales;
@@ -37,21 +39,34 @@ public:
 	std::vector<cmpt::color> colors;
 	std::vector<cmpt::gravity> gravities;
 
+	//component defaults
+
+	struct Defaults {
+		const glm::quat orientation = glm::quat(0, 0, 0, 1);
+		const glm::vec3 scale = glm::vec3(1, 1, 1);
+		const glm::vec4 color = glm::vec4(1, 1, 1, 0.5);
+	} defaults;
+
 	bool paused = false;
 
 	World();
 
-	void addRigidBody(cmpt::rigidBody b);
-	void removeRigidBody(cmpt::rigidBody b);
-
-	bool idExists(int id);
 	void removeId(int id);
 
-	void createBox     (int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color);
-	void createRigidBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color);
+	//special component manipulation
 
+	void addRigidBody(cmpt::rigidBody b);
+	void removeRigidBody(int id);
+
+	//easy component creation
+
+	void createBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color);
 	void createSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color);
-	void createPlanet(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, btScalar gravity);
+
+	void createRigidBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color, btScalar mass);
+	void createRigidSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, btScalar mass);
+
+
 
 	void update();
 	void generate();
@@ -59,5 +74,5 @@ public:
 
 	btDiscreteDynamicsWorld* getDynamicsWorld();
 
-	cmpt::rigidBody raycast(glm::vec3 start, glm::vec3 end);
+	cmpt::rigidBody* raycast(glm::vec3 start, glm::vec3 end);
 };

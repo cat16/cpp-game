@@ -10,6 +10,16 @@ cmpt::vao::vao(int id, vbd::vao value) : component(id), value(value) {}
 cmpt::rigidBody::rigidBody(int id, btRigidBody * value) : component(id), value(value) {}
 cmpt::gravity::gravity(int id, btScalar value) : component(id), value(value) {}
 
+cmpt::rigidBody::rigidBody(int id, glm::vec3 pos, glm::quat orientation, btCollisionShape *shape, btScalar mass) : component(id) {
+
+	btDefaultMotionState* motionState = new btDefaultMotionState(btTransform(btQuaternion(btVector3(orientation.x, orientation.y, orientation.z), orientation.w), util::btv3(pos)));
+	btVector3 inertia(0, 0, 0);
+	shape->calculateLocalInertia(mass, inertia);
+
+	btRigidBody::btRigidBodyConstructionInfo rigidBodyCI(mass, motionState, shape, inertia);
+	value = new btRigidBody(rigidBodyCI);
+}
+
 
 
 glm::vec3 cmpt::rigidBody::getPos() {
@@ -20,4 +30,13 @@ glm::vec3 cmpt::rigidBody::getPos() {
 
 glm::quat cmpt::rigidBody::getQuat() {
 	return glm::quat(value->getOrientation().getW(), value->getOrientation().getX(), value->getOrientation().getY(), value->getOrientation().getZ());
+}
+
+void cmpt::rigidBody::setPos(glm::vec3 pos) {
+	btTransform transform;
+	transform.setOrigin(util::btv3(pos));
+	transform.setRotation(value->getOrientation());
+	value->setWorldTransform(transform);
+	value->getMotionState()->setWorldTransform(transform);
+	value->setLinearVelocity(btVector3(0, 0, 0));
 }

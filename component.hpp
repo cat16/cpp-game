@@ -51,9 +51,13 @@ namespace cmpt {
 	struct rigidBody : public component {
 		bool operator==(const rigidBody& other) { return value == other.value; };
 		btRigidBody * value;
+
 		rigidBody(int id, btRigidBody * value);
+		rigidBody(int id, glm::vec3 pos, glm::quat orientation, btCollisionShape *shape, btScalar mass);
+
 		glm::vec3 getPos();
 		glm::quat getQuat();
+		void setPos(glm::vec3 pos);
 	};
 
 	struct gravity : public component {
@@ -61,6 +65,18 @@ namespace cmpt {
 		btScalar value;
 		gravity(int id, btScalar value);
 	};
+
+	template<typename T>
+	void updateCmpt(std::vector<T> &arr, T c) {
+		static_assert(std::is_base_of<component, T>::value, "T must derive from component");
+
+		if (getCmpt(arr, c.id)) {
+			getCmpt(arr, c.id)->value = c.value;
+		}
+		else {
+			arr.push_back(c);
+		}
+	}
 
 	template<typename T>
 	T* getCmpt(std::vector<T> &arr, int id) {
@@ -72,6 +88,18 @@ namespace cmpt {
 		}
 
 		return NULL;
+	}
+
+	template<typename T>
+	T* getCmptSafe(std::vector<T> &arr, T* def) {
+		static_assert(std::is_base_of<component, T>::value, "T must derive from component");
+
+		for (int i = 0; i < arr.size(); i++) {
+			if (arr[i].id == def->id)
+				return &arr[i];
+		}
+
+		return def;
 	}
 
 	template<typename T>
