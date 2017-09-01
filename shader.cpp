@@ -5,14 +5,31 @@
 #include <iostream>
 
 #include "shader.hpp"
+#include "util.hpp"
+
+Shader::Material::Material(
+	glm::vec3 ambient,
+	glm::vec3 diffuse,
+	glm::vec3 specular,
+	float shininess
+) : ambient(ambient), diffuse(diffuse), specular(specular), shininess(shininess) {}
+
+Shader::PointLight::PointLight(
+	glm::vec3 ambient,
+	glm::vec3 diffuse,
+	glm::vec3 specular,
+	float contant,
+	float linear,
+	float quadradic
+) : ambient(ambient), diffuse(diffuse), specular(specular), constant(constant), linear(linear), quadratic(quadradic) {}
 
 void Shader::init(const char * vertex_file_path, const char * fragment_file_path) {
 	// Create the shaders
 	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 
-	std::string vertexShaderCode = loadFile(vertex_file_path);
-	std::string fragShaderCode = loadFile(fragment_file_path);
+	std::string vertexShaderCode = util::loadFile(vertex_file_path);
+	std::string fragShaderCode = util::loadFile(fragment_file_path);
 
 	int compiled = 0;
 
@@ -43,10 +60,6 @@ void Shader::init(const char * vertex_file_path, const char * fragment_file_path
 		std::cout << "Successfully compiled and linked " << compiled << "/2 shaders" << std::endl;
 	}
 
-
-	//glDetachShader(ProgramID, vertexShader);
-	//glDetachShader(ProgramID, fragShader);
-
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragShader);
 }
@@ -72,23 +85,6 @@ bool Shader::compileShader(GLuint shader, std::string code) {
 	return true;
 }
 
-std::string Shader::loadFile(const char * path) {
-	std::string text;
-	std::ifstream fileStream(path, std::ios::in);
-	if (fileStream.is_open()) {
-		std::string line = "";
-		while (getline(fileStream, line))
-			text += "\n" + line;
-		fileStream.close();
-	}
-	else {
-		std::cerr << "Could not open file " << path << std::endl;
-		getchar();
-	}
-
-	return text;
-}
-
 GLuint Shader::location(const std::string &name) const {
 	return glGetUniformLocation(programID, name.c_str());
 }
@@ -107,6 +103,10 @@ void Shader::setVec4(const std::string &name, const glm::vec4 &vec) const {
 
 void Shader::setVec3(const std::string &name, const glm::vec3 &vec) const {
 	glUniform3f(location(name), vec.x, vec.y, vec.z);
+}
+
+void Shader::setInt(const std::string &name, const int i) {
+	glUniform1i(location(name), i);
 }
 
 void Shader::setFloat(const std::string &name, const float f) const {

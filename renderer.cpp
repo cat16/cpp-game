@@ -43,6 +43,114 @@ glm::quat Camera::getQuat() {
 
 Renderer::Renderer() : shader(Shader()) {}
 
+void Renderer::setView(Camera camera) {
+	glm::mat4 view;
+	view = glm::lookAt(camera.pos, camera.pos + camera.getForward(), camera.getUp());
+	shader.setMat4("view", view);
+	shader.setVec3("viewPos", camera.pos);
+}
+
+void Renderer::setLighting(World world) {
+	int seek = 0;
+	int j = 0;
+	for (int i = 0; i < world.pointLights.size(); i++) {
+
+		Shader::PointLight light = world.pointLights[i].value;
+		std::string lightStr = "pointLights[" + std::to_string(i + seek) + "]";
+
+		while (j < world.positions.size() && world.positions[j].id < world.pointLights[i].id) {
+			j++;
+		}
+
+		if (world.positions[j].id == world.pointLights[i].id) {
+			glm::vec3 pos = world.positions[j].value;
+
+			//give values
+			shader.setVec3(lightStr + ".pos", pos);
+			shader.setVec3(lightStr + ".ambient", light.ambient);
+			shader.setVec3(lightStr + ".diffuse", light.diffuse);
+			shader.setVec3(lightStr + ".specular", light.specular);
+			shader.setFloat(lightStr + ".constant", 1);
+			shader.setFloat(lightStr + ".linear", light.linear);
+			shader.setFloat(lightStr + ".quadratic", light.quadratic);
+		} else {
+			seek -= 1;
+			continue;
+		}
+
+		if (j == world.positions.size() - 1) {
+			break;
+		}
+	}
+	shader.setInt("pointLightCount", world.pointLights.size() + seek);
+}
+
+void Renderer::renderWorld(
+	std::vector<cmpt::vao> vaos,
+	std::vector<cmpt::pos> positions,
+	std::vector<cmpt::orientation> orientations,
+	std::vector<cmpt::scale> scales,
+	std::vector<cmpt::color> colors,
+	std::vector<cmpt::material> materials,
+	World::Defaults defaults
+) {
+	auto posItr = positions.begin();
+	auto orientationItr = orientations.begin();
+	auto scaleItr = scales.begin();
+	auto colorItr = colors.begin();
+	auto materialItr = materials.begin();
+
+	for (auto vaoItr = vaos.begin(); vaoItr != vaos.end(); ++vaoItr) {
+		auto nextId = [vaoItr](const cmpt::component &c) { return c.id >= vaoItr->id; };
+
+		posItr = std::find_if(posItr, positions.end(), nextId);
+		orientationItr = std::find_if(orientationItr, orientations.end(), nextId);
+		scaleItr = std::find_if(scaleItr, scales.end(), nextId);
+		colorItr = std::find_if(colorItr, colors.end(), nextId);
+		materialItr = std::find_if(materialItr, materials.end(), nextId);
+
+		if (posItr == positions.end()) {
+			break;
+		}
+
+		if (posItr->id > vaoItr->id) {
+			continue;
+		} else {
+			vbd::vao vao = vaoItr->value;
+			glm::vec3 pos = posItr->value;
+
+			auto getValue = [vaoItr](auto cmptItr, auto default) { return cmptItr->id == vaoItr->id ? cmptItr->value : default; };
+
+			//these things are needed to draw, but shouldn't be 100% neccessary.
+			glm::quat orientation = getValue(orientationItr, defaults.orientation);
+			glm::vec3 scale = getValue(scaleItr, defaults.scale);
+			glm::vec4 color = getValue(colorItr, defaults.color);
+			Shader::Material material = getValue(materialItr, defaults.material);
+
+			glm::mat4 model;
+			model = glm::translate(model, pos);
+			model *= glm::toMat4(orientation);
+			model = glm::scale(model, scale);
+
+			shader.setMat4("model", model);
+			shader.setVec4("color", color);
+			shader.setVec3("material.ambient", material.ambient);
+			shader.setVec3("material.diffuse", material.diffuse);
+			shader.setVec3("material.specular", material.specular);
+			shader.setFloat("material.shininess", material.shininess);
+
+			glBindVertexArray(vao.id);
+			glDrawArrays(vao.mode, 0, vao.count);
+		}
+	}
+}
+
+void Renderer::renderWorld(World world) {
+	for (auto layer : world.layers) {
+		renderWorld(layer, world.positions, world.orientations, world.scales, world.colors, world.materials, world.defaults);
+	}
+}
+
 void Renderer::render(World world, Camera camera) {
 
 	glClearColor(0.f, 0.f, 0.f, 1.0f);
@@ -50,55 +158,13 @@ void Renderer::render(World world, Camera camera) {
 
 	shader.use();
 
-	glm::mat4 view;
 	glm::mat4 projection;
 	projection = glm::perspective(glm::radians(45.0f), camera.width / camera.height, camera.near, camera.far);
-	view = glm::lookAt(camera.pos, camera.pos + camera.getForward(), camera.getUp());
-
 	shader.setMat4("projection", projection); // might be moved outside the render function
-	shader.setMat4("view", view);
 
-	shader.setVec3("lightColor", glm::vec3(1, 1, 1));
-	shader.setVec3("lightPos", glm::vec3(0, 0, 0));
-	shader.setFloat("lightAmbient", 0.1);
-
-	for (cmpt::vao vb : world.vertexBuffers) {
-
-		if (!cmpt::getCmpt(world.positions, vb.id))
-			continue;
-
-		glm::vec3 pos = cmpt::getCmpt(world.positions, vb.id)->value;
-		//these things are needed to draw, but shouldn't be 100% neccessary.
-		glm::quat orientation = cmpt::getCmptSafe(world.orientations, new cmpt::orientation( vb.id, world.defaults.orientation ))->value;
-		glm::vec3 scale = cmpt::getCmptSafe(world.scales, new cmpt::scale(vb.id, world.defaults.scale))->value;
-		glm::vec4 color = cmpt::getCmptSafe(world.colors, new cmpt::color(vb.id, world.defaults.color))->value;
-
-		if (!cmpt::getCmpt(world.orientations, vb.id))
-			orientation = glm::quat(0, 0, 0, 1);
-		else
-			orientation = cmpt::getCmpt(world.orientations, vb.id)->value;
-
-		if (!cmpt::getCmpt(world.colors, vb.id))
-			color = glm::vec4(0.5, 0.5, 0.5, 1);
-		else
-			color = cmpt::getCmpt(world.colors, vb.id)->value;
-
-		if (!cmpt::getCmpt(world.scales, vb.id))
-			scale = glm::vec3(1, 1, 1);
-		else
-			scale = cmpt::getCmpt(world.scales, vb.id)->value;
-
-		glm::mat4 model;
-		model = glm::translate(model, pos);
-		model *= glm::toMat4(orientation);
-		model = glm::scale(model, scale);
-
-		shader.setMat4("model", model);
-		shader.setVec4("color", color);
-
-		glBindVertexArray(vb.value.id);
-		glDrawArrays(vb.value.mode, 0, vb.value.count);
-	}
+	setView(camera);
+	setLighting(world);
+	renderWorld(world);
 
 	SDL_GL_SwapWindow(window);
 }

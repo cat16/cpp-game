@@ -55,20 +55,22 @@ std::map<std::string, vbd::vao> vbd::init() {
 	data["cube"] = vao(createVAO(cubebd, 3), GL_TRIANGLES, 36);
 
 
+	int quality = 50;
+
 	std::vector<GLfloat> spherebd;
-	for (int i = 0; i <= 40; i++)
+	for (int i = 0; i <= quality; i++)
 	{
-		double lat0 = util::PI * (-0.5 + (double)(i - 1) / 40);
+		double lat0 = util::PI * (-0.5 + (double)(i - 1) / quality);
 		double z0 = sin(lat0);
 		double zr0 = cos(lat0);
 
-		double lat1 = util::PI * (-0.5 + (double)i / 40);
+		double lat1 = util::PI * (-0.5 + (double)i / quality);
 		double z1 = sin(lat1);
 		double zr1 = cos(lat1);
 
-		for (int j = 0; j <= 40; j++)
+		for (int j = 0; j <= quality; j++)
 		{
-			double lng = 2 * util::PI * (double)(j - 1) / 40;
+			double lng = 2 * util::PI * (double)(j - 1) / quality;
 			double x = cos(lng);
 			double y = sin(lng);
 
@@ -90,7 +92,7 @@ std::map<std::string, vbd::vao> vbd::init() {
 			spherebd.push_back(z1);
 		}
 	}
-	data["sphere"] = vao(createVAO(spherebd, 3), GL_TRIANGLE_STRIP, 3200*2);
+	data["sphere"] = vao(createVAO(spherebd, 3), GL_TRIANGLE_STRIP, quality*quality*3);
 
 	return data;
 }

@@ -20,17 +20,11 @@ World::World() {
 	dispatcher = new btCollisionDispatcher(collisionConfiguration);
 	solver = new btSequentialImpulseConstraintSolver;
 	dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
-
 	dynamicsWorld->setGravity(btVector3(0, 0, 0));
-	//btCollisionShape* groundShape = new btStaticPlaneShape(btVector3(0, 1, 0), 1);
-	//btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, 0, 0)));
-	//btRigidBody::btRigidBodyConstructionInfo groundRigidBodyCI(0, groundMotionState, groundShape, btVector3(0, 0, 0));
-	//btRigidBody* groundRigidBody = new btRigidBody(groundRigidBodyCI);
-	//dynamicsWorld->addRigidBody(groundRigidBody);
 }
 
 void World::addRigidBody(cmpt::rigidBody b) {
-	rigidBodies.push_back(b);
+	cmpt::addCmpt(rigidBodies, b);
 	dynamicsWorld->addRigidBody(b.value);
 }
 
@@ -45,94 +39,113 @@ void World::removeId(int id) {
 	cmpt::removeCmpt(positions, id);
 	cmpt::removeCmpt(orientations, id);
 	cmpt::removeCmpt(scales, id);
-	cmpt::removeCmpt(vertexBuffers, id);
+	for (auto layer : layers) {
+		cmpt::removeCmpt(layer, id);
+	}
 	cmpt::removeCmpt(colors, id);
+	cmpt::removeCmpt(materials, id);
 	cmpt::removeCmpt(rigidBodies, id);
 	cmpt::removeCmpt(gravities, id);
 }
 
 //easy component creation
 
-void World::createBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color) {
-	positions.push_back({ id, pos });
-	orientations.push_back({ id, orientation });
-	scales.push_back({ id, dimensions });
-	colors.push_back({ id, color });
-	vertexBuffers.push_back({ id, vbs["cube"] });
+void World::createBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color, int layer) {
+	cmpt::addCmpt(positions, { id, pos });
+	cmpt::addCmpt(orientations, { id, orientation });
+	cmpt::addCmpt(scales, { id, dimensions });
+	cmpt::addCmpt(colors, { id, color });
+	cmpt::addCmpt(layers[layer], { id, vbs["cube"] });
 }
 
-void World::createSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color) {
-	positions.push_back({ id, pos });
-	orientations.push_back({ id, orientation });
-	scales.push_back({ id, glm::vec3(radius, radius, radius) });
-	colors.push_back({ id, color });
-	vertexBuffers.push_back({ id, vbs["sphere"] });
+void World::createSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, int layer) {
+	cmpt::addCmpt(positions, { id, pos });
+	cmpt::addCmpt(orientations, { id, orientation });
+	cmpt::addCmpt(scales, { id, glm::vec3(radius, radius, radius) });
+	cmpt::addCmpt(colors, { id, color });
+	cmpt::addCmpt(layers[layer], { id, vbs["sphere"] });
 }
 
-void World::createRigidBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color, btScalar mass) {
-	createBox(id, pos, orientation, dimensions, color);
+void World::createRigidBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color, int layer, btScalar mass) {
+	createBox(id, pos, orientation, dimensions, color, layer);
 	addRigidBody({ id, pos, orientation, new btBoxShape({dimensions.x / 2, dimensions.y / 2, dimensions.z / 2}), mass });
 }
 
-void World::createRigidSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, btScalar mass) {
-	createSphere(id, pos, orientation, radius, color);
+void World::createRigidSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, int layer, btScalar mass) {
+	createSphere(id, pos, orientation, radius, color, layer);
 	addRigidBody({ id, pos, orientation, new btSphereShape(radius), mass });
 }
 
-void World::update(double delta) {
-	if (!paused) {
-		for (cmpt::gravity g : gravities) {
-			glm::vec3 gPos;
-			if (cmpt::getCmpt(positions, g.id))
-				gPos = cmpt::getCmpt(positions, g.id)->value;
-			else
-				continue;
+void World::updateDrag() {
+	for (cmpt::rigidBody rb : rigidBodies) {
+		rb.value->applyDamping(10);
+	}
+}
 
+void World::updateGravity() {
+	//gravity loop
+	auto gPosItr = positions.begin();
+	for (auto gItr = gravities.begin(); gItr != gravities.end(); ++gItr) {
+		gPosItr = std::find_if(gPosItr, positions.end(), [gItr](const cmpt::component &c) { return c.id >= gItr->id; });
 
-			for (cmpt::rigidBody r : rigidBodies) {
-				if (!cmpt::getCmpt(gravities, r.id)) {
-					glm::vec3 rPos;
-					if (cmpt::getCmpt(positions, r.id))
-						rPos = cmpt::getCmpt(positions, r.id)->value;
-					else
-						continue;
+		if (gPosItr == positions.end()) {
+			break;
+		}
+		if (gPosItr->id > gItr->id) {
+			continue;
+		} else {
+			//rigidbody loop
+			auto rPosItr = positions.begin();
+			for (auto rItr = rigidBodies.begin(); rItr != rigidBodies.end(); ++rItr) {
+				rPosItr = std::find_if(rPosItr, positions.end(), [rItr](const cmpt::component &c) { return c.id >= rItr->id; });
 
-					btScalar d = util::distance3f(gPos, rPos);
-					if (d < 1000) {
-						btScalar force = (util::G * glm::pow(10, 12)) * (g.value * r.value->getInvMass()) / glm::pow(d, 2);
-						glm::vec3 gravity = util::move3d(rPos, gPos, -force);
-						r.value->applyForce(btVector3(gravity.x, gravity.y, gravity.z), btVector3(0, 0, 0));
-
-						r.value->setActivationState(ACTIVE_TAG);
+				if (rPosItr == positions.end()) {
+					break;
+				}
+				if (rPosItr->id > rItr->id) {
+					continue;
+				} else {
+					//apply gravity
+					if (rItr->value->isActive()) {
+						btScalar d = util::distance3f(gPosItr->value, rPosItr->value);
+						if (d < 1000) {
+							btScalar force = (util::G * glm::pow(10, 12)) * (gItr->value * rItr->value->getInvMass()) / glm::pow(d, 2);
+							glm::vec3 gravity = util::move3d(rPosItr->value, gPosItr->value, -force);
+							rItr->value->applyForce(btVector3(gravity.x, gravity.y, gravity.z), btVector3(0, 0, 0));
+						}
 					}
 				}
-			}
-		}
-		dynamicsWorld->stepSimulation(1 / 60.f, 10*delta);
-		for (cmpt::rigidBody r : rigidBodies) {
-			if (cmpt::getCmpt(positions, r.id)) {
-				cmpt::pos * p = cmpt::getCmpt(positions, r.id);
-				p->value = r.getPos();
-			}
-
-			if (cmpt::getCmpt(orientations, r.id)) {
-				cmpt::orientation * o = cmpt::getCmpt(orientations, r.id);
-				o->value = r.getQuat();
 			}
 		}
 	}
 }
 
-void World::generate() {
+void World::updateRigidBodies() {
+	auto posItr = positions.begin();
+	auto orientationItr = orientations.begin();
 
-	gravities.push_back({3, 100});
-	createRigidSphere(3, glm::vec3(0, -51, 0), glm::quat(0, 0, 0, 1), btScalar(50), glm::vec4(0.5, 0.5, 0.5, 1), 0);
+	for (auto rbItr = rigidBodies.begin(); rbItr != rigidBodies.end(); ++rbItr) {
 
-	//addObject(new entity::Planet(btVector3(0, -60, 0), 50, 100, glm::vec4(0.5, 0.5, 0.5, 1)));
-	//addObject(new entity::Planet(btVector3(-40, -20, 0), 5, 5, glm::vec4(0.5, 0.5, 0.5, 1)));
-	//addObject(new entity::Planet(btVector3(0, 50, 20), 30, 30, glm::vec4(0.5, 0.5, 0.5, 1)));
+		auto nextId = [rbItr](const cmpt::component &c) { return c.id >= rbItr->id; };
 
-	//addObject(new entity::Star(btVector3(0, 15, 0), 2, glm::vec4(2, 2, 2, 0.5)));
+		posItr = std::find_if(posItr, positions.end(), nextId);
+		orientationItr = std::find_if(orientationItr, orientations.end(), nextId);
+
+		if (rbItr->id == posItr->id)
+			posItr->value = rbItr->getPos();
+		if (rbItr->id == orientationItr->id)
+			orientationItr->value = rbItr->getQuat();
+
+	}
+}
+
+void World::update(double delta) {
+	if (!paused) {
+		updateDrag();
+		updateGravity();
+		dynamicsWorld->stepSimulation(1 / 60.f, 10 * delta);
+		updateRigidBodies();
+	}
 }
 
 void World::cleanUp() {

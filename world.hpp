@@ -35,8 +35,10 @@ public:
 	std::vector<cmpt::pos> positions;
 	std::vector<cmpt::orientation> orientations;
 	std::vector<cmpt::scale> scales;
-	std::vector<cmpt::vao> vertexBuffers;
+	std::vector<std::vector<cmpt::vao>> layers;
 	std::vector<cmpt::color> colors;
+	std::vector<cmpt::material> materials;
+	std::vector<cmpt::pointLight> pointLights;
 	std::vector<cmpt::gravity> gravities;
 
 	//component defaults
@@ -45,6 +47,7 @@ public:
 		const glm::quat orientation = glm::quat(0, 0, 0, 1);
 		const glm::vec3 scale = glm::vec3(1, 1, 1);
 		const glm::vec4 color = glm::vec4(1, 1, 1, 0.5);
+		const Shader::Material material = Shader::Material(glm::vec3(0.1, 0.1, 0.1), glm::vec3(1, 1, 1), glm::vec3(0.5, 0.5, 0.5), 32);
 	} defaults;
 
 	bool paused = false;
@@ -60,16 +63,19 @@ public:
 
 	//easy component creation
 
-	void createBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color);
-	void createSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color);
+	void createBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color, int layer);
+	void createSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, int layer);
 
-	void createRigidBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color, btScalar mass);
-	void createRigidSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, btScalar mass);
+	void createRigidBox(int id, glm::vec3 pos, glm::quat orientation, glm::vec3 dimensions, glm::vec4 color, int layer, btScalar mass);
+	void createRigidSphere(int id, glm::vec3 pos, glm::quat orientation, btScalar radius, glm::vec4 color, int layer, btScalar mass);
 
 
+
+	void updateDrag();
+	void updateGravity();
+	void updateRigidBodies();
 
 	void update(double delta);
-	void generate();
 	void cleanUp();
 
 	btDiscreteDynamicsWorld* getDynamicsWorld();

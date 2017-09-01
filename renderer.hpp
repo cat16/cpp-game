@@ -34,6 +34,7 @@ public:
 
 class Renderer {
 public:
+
 	Shader shader;
 
 	SDL_Window * window;
@@ -41,5 +42,19 @@ public:
 	Renderer();
 
 	void init(const char * vertex_file_path, const char * fragment_file_path);
+
+	void setView(Camera camera);
+	void setLighting(World world);
+	void renderWorld(World world);
+	void renderWorld(
+		std::vector<cmpt::vao> vaos,
+		std::vector<cmpt::pos> positions,
+		std::vector<cmpt::orientation> orientations,
+		std::vector<cmpt::scale> scales,
+		std::vector<cmpt::color> colors,
+		std::vector<cmpt::material> materials,
+		World::Defaults defaults
+	);
+
 	void render(World world, Camera c);
 };

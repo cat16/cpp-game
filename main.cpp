@@ -41,6 +41,11 @@ World world;
 Camera camera(glm::vec3(0, 0, 0), width, height);
 GUI gui;
 
+enum Layer {
+	BASE = 0,
+	TRANSPARENT = 1
+};
+
 GLfloat speed = 1;
 GLfloat rollSpeed = 0.5;
 
@@ -53,8 +58,13 @@ enum Action {
 	INTERACT, CREATE, REMOVE
 };
 Action action = INTERACT;
+int projectionId = 0;
 cmpt::rigidBody * holding = NULL;
-int entityCount = 4;
+btCollisionShape * shape = NULL;
+btScalar gravity = NULL;
+btScalar mass = 1;
+btScalar size = 1;
+int entityCount = 2;
 
 GLfloat perSec(GLfloat f) {
 	return f * delta.count();
@@ -88,13 +98,31 @@ int init() {
 		return 1;
 	}
 
-	renderer.init("vertex_shader.glsl", "frag_shader.glsl");
+	renderer.init("shaders/vertex_shader.glsl", "shaders/frag_shader.glsl");
 
 	world.vbs = vbd::init();
 
 
 
-	world.generate();
+	for (int i = 0; i < 2; i++) {
+		world.layers.push_back(std::vector<cmpt::vao>());
+	}
+
+	int id;
+	//star
+	id = 1;
+	cmpt::addCmpt(world.positions, { id, glm::vec3(0, 50, 0) });
+	cmpt::addCmpt(world.pointLights, { id, Shader::PointLight(
+		glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1),
+		1.0f, 0.007f, 0.0002f
+	) });
+	world.createRigidSphere(id, glm::vec3(0, 50, 0), glm::quat(1, 1, 1, 1), btScalar(1), glm::vec4(1, 1, 1, 1), BASE, 0);
+	cmpt::addCmpt(world.materials, { id, Shader::Material(glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), glm::vec3(1, 1, 1), 1) });
+	//planet
+	id = 2;
+	cmpt::addCmpt(world.gravities, { id, 100 });
+	world.createRigidSphere(id, glm::vec3(0, -51, 0), glm::quat(1, 1, 1, 1), btScalar(50), glm::vec4(0.5, 0.5, 0.5, 1), BASE, 0);
+	cmpt::addCmpt(world.materials, {id, Shader::Material(glm::vec3(0.1, 0.1, 0.1), glm::vec3(1, 1, 1), glm::vec3(0, 0, 0), 1)});
 
 	renderer.window = window;
 
@@ -104,8 +132,9 @@ int init() {
 
 
 	input.mouseScroll = 5;
-	world.colors.push_back({ -1, glm::vec4(1, 0, 0, 0.5) });
-	world.vertexBuffers.push_back({ -1, world.vbs["cube"] });
+	shape = new btBoxShape(util::btv3(cmpt::getCmptSafe(world.scales, new cmpt::scale(projectionId, world.defaults.scale))->value / 2.f));
+	cmpt::addCmpt(world.colors,{ projectionId, glm::vec4(1, 0, 0, 0.5) });
+	cmpt::addCmpt(world.layers[TRANSPARENT], { projectionId, world.vbs["cube"] });
 
 	return 0;
 }
@@ -113,6 +142,24 @@ int init() {
 void cleanUp() {
 	world.cleanUp();
 	SDL_Quit();
+}
+
+void updateColor(glm::vec3 color) {
+	cmpt::updateCmpt(world.colors, { projectionId, glm::vec4(color.x, color.y, color.z, 0.5) });
+	if (cmpt::getCmpt(world.pointLights, projectionId)) {
+		cmpt::getCmpt(world.pointLights, projectionId)->value.ambient = color;
+		cmpt::getCmpt(world.pointLights, projectionId)->value.diffuse = color;
+		cmpt::getCmpt(world.pointLights, projectionId)->value.specular = color;
+	}
+}
+
+void resetCreate() {
+	cmpt::removeCmpt(world.pointLights, projectionId);
+	cmpt::removeCmpt(world.materials, projectionId);
+	cmpt::removeCmpt(world.gravities, projectionId);
+	mass = 1;
+	gravity = 0;
+	shape = NULL;
 }
 
 void update() {
@@ -162,7 +209,7 @@ void update() {
 
 
 
-		if(input.mouseScroll < 1) input.mouseScroll = 1;
+		if (input.mouseScroll < 1) input.mouseScroll = 1;
 		GLfloat reach = input.mouseScroll;
 
 		glm::vec3 lookTo = (camera.getForward() * reach);
@@ -170,34 +217,70 @@ void update() {
 		if (keys[SDLK_LCTRL]) {
 			if (keys[SDLK_LSHIFT]) {
 				if (keysp[SDLK_1])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 0, 0, 0.5) });
+					updateColor(glm::vec4(1, 0, 0, 0.5));
 				if (keysp[SDLK_2])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 0.5, 0, 0.5) });
+					updateColor(glm::vec4(1, 0.5, 0, 0.5));
 				if (keysp[SDLK_3])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 1, 0, 0.5) });
+					updateColor(glm::vec4(1, 1, 0, 0.5));
 				if (keysp[SDLK_4])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 1, 0, 0.5) });
+					updateColor(glm::vec4(0, 1, 0, 0.5));
 				if (keysp[SDLK_5])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 1, 0.5, 0.5) });
+					updateColor(glm::vec4(0, 1, 0.5, 0.5));
 				if (keysp[SDLK_6])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 1, 1, 0.5) });
+					updateColor(glm::vec4(0, 1, 1, 0.5));
 				if (keysp[SDLK_7])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0, 0, 1, 0.5) });
+					updateColor(glm::vec4(0, 0, 1, 0.5));
 				if (keysp[SDLK_8])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(0.5, 0, 1, 0.5) });
+					updateColor(glm::vec4(0.5, 0, 1, 0.5));
 				if (keysp[SDLK_9])
-					cmpt::updateCmpt(world.colors, { -1, glm::vec4(1, 0, 1, 0.5) });
+					updateColor(glm::vec4(1, 0, 1, 0.5));
 			}
 			else {
 				if (keysp[SDLK_1]) {
-					cmpt::removeCmpt(world.vertexBuffers, -1);
-					world.vertexBuffers.push_back({ -1, world.vbs["cube"] });
-					cmpt::updateCmpt(world.scales, cmpt::scale(-1, glm::vec3(1, 1, 1)));
+					resetCreate();
+
+					cmpt::updateCmpt(world.layers[TRANSPARENT], { projectionId, world.vbs["cube"] });
+					cmpt::updateCmpt(world.scales, cmpt::scale(projectionId, glm::vec3(1, 1, 1)));
+					shape = new btBoxShape(util::btv3(cmpt::getCmptSafe(world.scales, new cmpt::scale(projectionId, world.defaults.scale))->value / 2.f));
 				}
 				else if (keysp[SDLK_2]) {
-					cmpt::removeCmpt(world.vertexBuffers, -1);
-					world.vertexBuffers.push_back({ -1, world.vbs["sphere"] });
-					cmpt::updateCmpt(world.scales, cmpt::scale(-1, glm::vec3(0.5, 0.5, 0.5)));
+					resetCreate();
+
+					cmpt::updateCmpt(world.layers[TRANSPARENT], { projectionId, world.vbs["sphere"] });
+					cmpt::updateCmpt(world.scales, cmpt::scale(projectionId, glm::vec3(0.5, 0.5, 0.5)));
+					shape = new btSphereShape(btScalar(cmpt::getCmptSafe(world.scales, new cmpt::scale(projectionId, world.defaults.scale))->value.x));
+				}
+				else if (keysp[SDLK_3]) {
+					resetCreate();
+
+					mass = 0;
+					gravity = 10;
+					cmpt::updateCmpt(world.materials, { projectionId, Shader::Material(
+						glm::vec3(0.3, 0.3, 0.3),
+						glm::vec3(1, 1, 1),
+						glm::vec3(0, 0, 0),
+						1
+					) });
+					cmpt::updateCmpt(world.layers[TRANSPARENT], { projectionId, world.vbs["sphere"] });
+					cmpt::updateCmpt(world.scales, cmpt::scale(projectionId, glm::vec3(10, 10, 10)));
+					shape = new btSphereShape(btScalar(cmpt::getCmptSafe(world.scales, new cmpt::scale(projectionId, world.defaults.scale))->value.x));
+				}
+				else if (keysp[SDLK_4]) {
+					resetCreate();
+
+					cmpt::updateCmpt(world.materials, { projectionId, Shader::Material(
+						glm::vec3(1, 1, 1),
+						glm::vec3(1, 1, 1),
+						glm::vec3(1, 1, 1),
+						1
+					) });
+					glm::vec3 color = glm::vec3(cmpt::getCmptSafe(world.colors, new cmpt::color(projectionId, world.defaults.color))->value);
+					cmpt::updateCmpt(world.layers[TRANSPARENT], { projectionId, world.vbs["sphere"] });
+					cmpt::updateCmpt(world.pointLights, { projectionId, Shader::PointLight(
+						color, color, color,
+						1.0f, 0.007f, 0.0002f
+					) });
+					cmpt::updateCmpt(world.scales, cmpt::scale(projectionId, glm::vec3(0.5, 0.5, 0.5)));
 				}
 			}
 		}
@@ -214,36 +297,29 @@ void update() {
 		}
 
 		if (action == CREATE) {
-			cmpt::updateCmpt(world.positions, cmpt::pos({ -1, lookTo + camera.pos }));
-			cmpt::updateCmpt(world.orientations, cmpt::orientation({ -1, glm::inverse(camera.getQuat()) }));
+			cmpt::updateCmpt(world.positions, cmpt::pos({ projectionId, lookTo + camera.pos }));
+			cmpt::updateCmpt(world.orientations, cmpt::orientation({ projectionId, glm::inverse(camera.getQuat()) }));
 			if (input.mbsp[SDL_BUTTON_LEFT]) {
-				glm::vec4 color = cmpt::getCmptSafe(world.colors, new cmpt::color(-1, world.defaults.color))->value;
+				glm::vec4 color = cmpt::getCmptSafe(world.colors, new cmpt::color(projectionId, world.defaults.color))->value;
 				color.w = 1;
-				vbd::vao vao = cmpt::getCmpt(world.vertexBuffers, -1)->value;
 
-				if (vao.id == world.vbs["cube"].id) {
-					world.createRigidBox(entityCount++,
-						cmpt::getCmpt(world.positions, -1)->value,
-						cmpt::getCmpt(world.orientations, -1)->value,
-						cmpt::getCmptSafe(world.scales, new cmpt::scale(-1, world.defaults.scale))->value,
-						color,
-						1
-					);
-				}
-
-				if (vao.id == world.vbs["sphere"].id) {
-					world.createRigidSphere(entityCount++,
-						cmpt::getCmpt(world.positions, -1)->value,
-						cmpt::getCmpt(world.orientations, -1)->value,
-						cmpt::getCmptSafe(world.scales, new cmpt::scale(-1, world.defaults.scale))->value.x,
-						color,
-						1
-					);
-				}
+				entityCount++;
+				cmpt::copyCmpt(world.positions, projectionId, entityCount);
+				cmpt::copyCmpt(world.orientations, projectionId, entityCount);
+				cmpt::copyCmpt(world.scales, projectionId, entityCount);
+				cmpt::copyCmpt(world.layers[TRANSPARENT], world.layers[BASE], projectionId, entityCount);
+				cmpt::copyCmpt(world.materials, projectionId, entityCount);
+				cmpt::copyCmpt(world.pointLights, projectionId, entityCount);
+				cmpt::copyCmpt(world.gravities, projectionId, entityCount);
+				cmpt::addCmpt(world.colors, { entityCount, color });
+				if (shape)
+					world.addRigidBody(cmpt::rigidBody(entityCount, camera.pos + lookTo, camera.getQuat(), shape, mass));
+				if (gravity)
+					cmpt::addCmpt(world.gravities,{ entityCount, gravity });
 			}
 		}
 		else {
-			cmpt::removeCmpt(world.positions, -1);
+			cmpt::removeCmpt(world.positions, projectionId);
 		}
 
 		if (action == INTERACT) {
@@ -256,6 +332,12 @@ void update() {
 			}
 			if (holding) {
 				holding->setPos(lookTo + camera.pos);
+				holding->value->activate();
+			}
+
+			if (lookingAt && input.mbs[SDL_BUTTON_RIGHT]) {
+				lookingAt->value->applyForce(util::btv3(camera.getForward()*25.f), btVector3(0, 0, 0));
+				lookingAt->value->activate();
 			}
 		}
 		else {

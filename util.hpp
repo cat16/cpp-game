@@ -13,6 +13,10 @@
 #include <gtx/quaternion.hpp>
 #include <btBulletDynamicsCommon.h>
 
+#include <string>
+#include <iostream>
+#include <fstream>
+
 namespace util {
 
 	enum rotationEnum {
@@ -37,4 +41,6 @@ namespace util {
 
 	btVector3 btv3(glm::vec3 vec);
 	glm::vec3 glmv3(const btVector3 &vec);
+
+	std::string loadFile(const char * path);
 }

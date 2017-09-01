@@ -58,3 +58,19 @@ btVector3 util::btv3(glm::vec3 vec) {
 glm::vec3 util::glmv3(const btVector3 &vec) {
 	return glm::vec3(vec.getX(), vec.getY(), vec.getZ());
 }
+
+std::string util::loadFile(const char * path) {
+	std::string text;
+	std::ifstream fileStream(path, std::ios::in);
+	if (fileStream.is_open()) {
+		std::string line = "";
+		while (getline(fileStream, line))
+			text += "\n" + line;
+		fileStream.close();
+	} else {
+		std::cerr << "Could not open file " << path << std::endl;
+		getchar();
+	}
+
+	return text;
+}
